@@ -18,6 +18,7 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.timer import Timer
 import tomesd
 
+from sd_remote_models_buffer import RemoteModelBuffer
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 
@@ -292,8 +293,11 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
         else:
             pl_sd = safetensors.torch.load(open(checkpoint_file, 'rb').read())
             pl_sd = {k: v.to(device) for k, v in pl_sd.items()}
+    elif extension.lower() == ".ckpt" and shared.opts.load_remote_ckpt:
+        buf = load_remote_ckpt(checkpoint_file)
+        pl_sd = torch.load(buf, map_location=map_location or shared.weight_load_location)
     else:
-        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
+        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)       
 
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -301,6 +305,10 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
     sd = get_state_dict_from_checkpoint(pl_sd)
     return sd
 
+
+def load_remote_ckpt(checkpoint_file):
+    oss_obj_buf = RemoteModelBuffer()
+    return oss_obj_buf.read(checkpoint_file)
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()

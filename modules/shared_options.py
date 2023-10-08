@@ -323,6 +323,13 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
 }))
 
+options_templates.update(options_section(('loadremoteckpt', "Load Remote CKPT"), {
+    "load_remote_ckpt": OptionInfo(False, "Load ckpt models from remote object storage"),
+    'bucket_name': OptionInfo("", "Bucket name to download ckpt model"),
+    'bucket_endpoint': OptionInfo("", "Bucket endpoint to download ckpt model"),
+    'bucket_model_ckpt_dir': OptionInfo("", "Ckpt model directory in oss bucket"),
+}))
+
 options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable these extensions"),
     "disable_all_extensions": OptionInfo("none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
