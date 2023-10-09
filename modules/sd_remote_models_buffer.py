@@ -20,9 +20,12 @@ class RemoteModelBuffer():
 
     def read(self, checkpoint_file):
         time_start = time.time()
-        object_name = shared.opts.bucket_model_ckpt_dir + '/' +checkpoint_file
+        endslash = '' if  shared.opts.bucket_model_ckpt_dir.endswith('/') else '/'
+        object_name = shared.opts.bucket_model_ckpt_dir + endslash + checkpoint_file
         buffer = BytesIO()
         obj_size = self.__get_object_size(object_name)
+
+        print ("remote model size %d" % obj_size)
 
         s = 0
         end = obj_size - 1
@@ -47,6 +50,8 @@ class RemoteModelBuffer():
         
         time_end = time.time()
 
+        print ("remote ckpt read time cost: ", time_end - time_start)
+        buffer.seek(0)
         return buffer
 
     def __range_get(self, object_name, buffer, start, end, read_chunk_size):

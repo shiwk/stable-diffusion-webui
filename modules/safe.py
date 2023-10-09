@@ -8,7 +8,7 @@ import numpy
 import _codecs
 import zipfile
 import re
-
+import io
 
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
 from modules import errors
@@ -152,6 +152,9 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
             exc_info=True,
         )
         return None
+    if isinstance(filename, io.IOBase):
+        # for the case of file-like obj
+        filename.seek(0)
 
     return unsafe_torch_load(filename, *args, **kwargs)
 
