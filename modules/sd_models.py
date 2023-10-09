@@ -308,7 +308,7 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
 
 def load_remote_ckpt(checkpoint_file):
     oss_obj_buf = RemoteModelBuffer()
-    return oss_obj_buf.read(checkpoint_file)
+    return oss_obj_buf.read(os.path.basename(checkpoint_file))
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()

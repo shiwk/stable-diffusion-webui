@@ -46,4 +46,9 @@
 # Uncomment to disable TCMalloc
 #export NO_TCMALLOC="True"
 
+# Bucket access
+#export ACCESS_KEY_ID=""
+#export ACCESS_KEY_SECRET=""
+
+
 ###########################################
