@@ -18,7 +18,7 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.timer import Timer
 import tomesd
 
-from sd_remote_models_buffer import RemoteModelBuffer
+from modules.sd_remote_models_buffer import RemoteModelBuffer
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 
