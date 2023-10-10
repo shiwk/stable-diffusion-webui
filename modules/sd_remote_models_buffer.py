@@ -7,12 +7,8 @@ from modules import shared
 
 class RemoteModelBuffer():
     def __init__(self):
-        self.__endpoint = shared.opts.bucket_endpoint
-        self.__bucket_name = shared.opts.bucket_name
-        self.__secret_access_key = os.environ.get('ACCESS_KEY_SECRET')
-        self.__access_key_id = os.environ.get('ACCESS_KEY_ID')
-        auth = oss2.Auth(self.__access_key_id, self.__secret_access_key)
-        self.__bucket = oss2.Bucket(auth, self.__endpoint, self.__bucket_name, enable_crc=False)
+        auth = oss2.Auth(os.environ.get('ACCESS_KEY_ID'), os.environ.get('ACCESS_KEY_SECRET'))
+        self.__bucket = oss2.Bucket(auth, shared.opts.bucket_endpoint, shared.opts.bucket_name, enable_crc=False)
     
     def __get_object_size(self, object_name):
         simplifiedmeta = self.__bucket.get_object_meta(object_name)
