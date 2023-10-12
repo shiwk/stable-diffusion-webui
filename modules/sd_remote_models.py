@@ -19,9 +19,9 @@ def get_remote_model_mmtime(model_name):
     return  __bucket__().head_object(model_name).last_modified
 
 def list_remote_models(ext_filter):
-    prefix = shared.opts.bucket_model_ckpt_dir
+    dir = shared.opts.bucket_model_ckpt_dir if shared.opts.bucket_model_ckpt_dir.endswith('/') else shared.opts.bucket_model_ckpt_dir + '/'
     output = []
-    for obj in oss2.ObjectIteratorV2(__bucket__(), prefix = prefix, delimiter = '/', start_after=prefix, fetch_owner=False):
+    for obj in oss2.ObjectIteratorV2(__bucket__(), prefix = dir, delimiter = '/', start_after=dir, fetch_owner=False):
         if obj.is_prefix():
             print('directory: ', obj.key)
         else:
@@ -44,8 +44,6 @@ def read_remote_model(checkpoint_file, start=0, size=-1):
     s = start
     end = (obj_size if size == -1 else start + size) - 1
 
-    print ("remote model %s from  %d to %d" % (checkpoint_file, s, end))
-
     tasks = []
 
     read_chunk_size = 2 * 1024 * 1024
@@ -67,7 +65,7 @@ def read_remote_model(checkpoint_file, start=0, size=-1):
     
     time_end = time.time()
 
-    print ("remote ckpt read time cost: ", time_end - time_start)
+    print ("remote %s read time cost: %f"%(checkpoint_file, time_end - time_start))
     buffer.seek(0)
     return buffer
 
