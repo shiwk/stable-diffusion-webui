@@ -85,8 +85,8 @@ class CheckpointInfo:
         self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}", remote_model=remote_model)
         self.shorthash = self.sha256[0:10] if self.sha256 else None
 
-        self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]' + '[remote]' if self.remote_model else '' 
-        self.short_title = self.name_for_extra if self.shorthash is None else f'{self.name_for_extra} [{self.shorthash}]'
+        self.title = name + '[remote]' if self.remote_model else '' + '' if self.shorthash is None else f'[{self.shorthash}]'
+        self.short_title = self.name_for_extra + '[remote]' if self.remote_model else '' + '' if self.shorthash is None else f'[{self.shorthash}]'
 
         self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
         if self.shorthash:
@@ -305,8 +305,6 @@ def read_metadata_from_remote_safetensors(filename):
     metadata_len = read_remote_model(filename, start=0, size=8).getvalue()
     metadata_len = int.from_bytes(metadata_len, "little")
     json_start = read_remote_model(filename, start=8, size=2).getvalue()
-    print("metadata_len: ", metadata_len)
-    print ("json_start %b, len: %d", json_start, len(json_start))
 
     assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
     json_data = json_start + read_remote_model(filename, start=10, size=metadata_len-2).getvalue()
