@@ -112,8 +112,8 @@ class CheckpointInfo:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
 
         old_title = self.title
-        self.title = f'{self.name} [{self.shorthash}]'
-        self.short_title = f'{self.name_for_extra} [{self.shorthash}]'
+        self.title = f'{self.name} {"[remote]" if remote_model else ""}[{self.shorthash}]'
+        self.short_title = f'{self.name_for_extra} {"[remote]" if remote_model else ""}[{self.shorthash}]'
 
         replace_key(checkpoints_list, old_title, self.title, self)
         self.register()
