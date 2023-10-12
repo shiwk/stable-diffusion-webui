@@ -5,6 +5,7 @@ import threading
 import time
 
 from modules.paths import data_path, script_path
+from modules.sd_remote_models import *
 
 cache_filename = os.environ.get('SD_WEBUI_CACHE_FILE', os.path.join(data_path, "cache.json"))
 cache_data = None
@@ -79,7 +80,7 @@ def cache(subsection):
     return s
 
 
-def cached_data_for_file(subsection, title, filename, func):
+def cached_data_for_file(subsection, title, filename, func, remote_model=False):
     """
     Retrieves or generates data for a specific file, using a caching mechanism.
 
@@ -103,7 +104,7 @@ def cached_data_for_file(subsection, title, filename, func):
     """
 
     existing_cache = cache(subsection)
-    ondisk_mtime = os.path.getmtime(filename)
+    ondisk_mtime = os.path.getmtime(filename) if not remote_model else get_remote_model_mmtime(filename)
 
     entry = existing_cache.get(title)
     if entry:

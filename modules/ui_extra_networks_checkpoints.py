@@ -26,7 +26,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             "onclick": '"' + html.escape(f"""return selectCheckpoint({quote_js(name)})""") + '"',
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": checkpoint.metadata,
-            "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},
+            "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename, remote_model=checkpoint.remote_model)},
         }
 
     def list_items(self):

@@ -3,6 +3,8 @@ import os.path
 
 from modules import shared
 import modules.cache
+from modules.sd_remote_models import *
+
 
 dump_cache = modules.cache.dump_cache
 cache = modules.cache.cache
@@ -18,10 +20,19 @@ def calculate_sha256(filename):
 
     return hash_sha256.hexdigest()
 
+def calculate_remote_sha256(filename):
+    hash_sha256 = hashlib.sha256()
+    blksize = 1024 * 1024
 
-def sha256_from_cache(filename, title, use_addnet_hash=False):
+    buf = read_remote_model(filename)
+    for chunk in iter(lambda: buf.read(blksize), b""):
+        hash_sha256.update(chunk)
+    
+    return hash_sha256.hexdigest()
+
+def sha256_from_cache(filename, title, use_addnet_hash=False, remote_model = False):
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
-    ondisk_mtime = os.path.getmtime(filename)
+    ondisk_mtime = os.path.getmtime(filename) if not remote_model else get_remote_model_mmtime(filename)
 
     if title not in hashes:
         return None
@@ -35,10 +46,12 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
     return cached_sha256
 
 
-def sha256(filename, title, use_addnet_hash=False):
+def sha256(filename, title, use_addnet_hash=False, remote_model=False):
+
+    print("filename: %s, title: %s, remote_model: %d" %(filename, title, remote_model))
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
 
-    sha256_value = sha256_from_cache(filename, title, use_addnet_hash)
+    sha256_value = sha256_from_cache(filename, title, use_addnet_hash, remote_model=remote_model)
     if sha256_value is not None:
         return sha256_value
 
@@ -50,11 +63,12 @@ def sha256(filename, title, use_addnet_hash=False):
         with open(filename, "rb") as file:
             sha256_value = addnet_hash_safetensors(file)
     else:
-        sha256_value = calculate_sha256(filename)
+        sha256_value = calculate_sha256(filename) if not remote_model else calculate_remote_sha256(filename)
     print(f"{sha256_value}")
 
+    mtime = os.path.getmtime(filename) if not remote_model else get_remote_model_mmtime(filename)
     hashes[title] = {
-        "mtime": os.path.getmtime(filename),
+        "mtime": mtime,
         "sha256": sha256_value,
     }
 

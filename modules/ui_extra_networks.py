@@ -11,6 +11,7 @@ from fastapi.exceptions import HTTPException
 
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
+from modules.sd_remote_models import *
 
 extra_pages = []
 allowed_dirs = set()
@@ -256,17 +257,24 @@ class ExtraNetworksPage:
 
         return self.card_page.format(**args)
 
-    def get_sort_keys(self, path):
+    def get_sort_keys(self, path, remote_model=False):
         """
         List of default keys used for sorting in the UI.
         """
-        pth = Path(path)
-        stat = pth.stat()
-        return {
-            "date_created": int(stat.st_ctime or 0),
-            "date_modified": int(stat.st_mtime or 0),
-            "name": pth.name.lower(),
-        }
+        if not remote_model:
+            pth = Path(path)
+            stat = pth.stat()
+            return {
+                "date_created": int(stat.st_ctime or 0),
+                "date_modified": int(stat.st_mtime or 0),
+                "name": pth.name.lower(),
+            }
+        else:
+            return {
+                "date_created": 0,
+                "date_modified": int(get_remote_model_mmtime(path)),
+                "name": path.lower(),
+            }
 
     def find_preview(self, path):
         """

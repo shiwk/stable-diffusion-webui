@@ -18,7 +18,7 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.timer import Timer
 import tomesd
 
-from modules.sd_remote_models_buffer import RemoteModelBuffer
+from modules.sd_remote_models import *
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 
@@ -47,11 +47,12 @@ def replace_key(d, key, new_key, value):
 
 
 class CheckpointInfo:
-    def __init__(self, filename):
+    def __init__(self, filename, remote_model=False):
         self.filename = filename
         abspath = os.path.abspath(filename)
 
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
+        self.remote_model = remote_model
 
         if shared.cmd_opts.ckpt_dir is not None and abspath.startswith(shared.cmd_opts.ckpt_dir):
             name = abspath.replace(shared.cmd_opts.ckpt_dir, '')
@@ -64,7 +65,7 @@ class CheckpointInfo:
             name = name[1:]
 
         def read_metadata():
-            metadata = read_metadata_from_safetensors(filename)
+            metadata = read_metadata_from_safetensors(filename) if not remote_model else read_metadata_from_remote_safetensors(filename)
             self.modelspec_thumbnail = metadata.pop('modelspec.thumbnail', None)
 
             return metadata
@@ -72,19 +73,19 @@ class CheckpointInfo:
         self.metadata = {}
         if self.is_safetensors:
             try:
-                self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name, filename, read_metadata)
+                self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name, filename, read_metadata, remote_model)
             except Exception as e:
                 errors.display(e, f"reading metadata for {filename}")
 
         self.name = name
         self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
-        self.hash = model_hash(filename)
+        self.hash = model_hash(filename) if not remote_model else remote_model_hash(filename)
 
-        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
+        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}", remote_model=remote_model)
         self.shorthash = self.sha256[0:10] if self.sha256 else None
 
-        self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
+        self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]' + '[remote]' if self.remote_model else '' 
         self.short_title = self.name_for_extra if self.shorthash is None else f'{self.name_for_extra} [{self.shorthash}]'
 
         self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
@@ -96,8 +97,8 @@ class CheckpointInfo:
         for id in self.ids:
             checkpoint_aliases[id] = self
 
-    def calculate_shorthash(self):
-        self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}")
+    def calculate_shorthash(self, remote_model=False):
+        self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}", remote_model=remote_model)
         if self.sha256 is None:
             return
 
@@ -162,7 +163,12 @@ def list_models():
     for filename in model_list:
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
-
+    
+    if shared.opts.load_remote_ckpt:
+        remote_models = list_remote_models(ext_filter=[".ckpt", ".safetensors"])
+        for filename in remote_models:
+            checkpoint_info = CheckpointInfo(filename, remote_model=True)
+            checkpoint_info.register()
 
 re_strip_checksum = re.compile(r"\s*\[[^]]+]\s*$")
 
@@ -200,6 +206,17 @@ def model_hash(filename):
             return m.hexdigest()[0:8]
     except FileNotFoundError:
         return 'NOFILE'
+
+def remote_model_hash(model_name):
+    """old hash that only looks at a small part of the file and is prone to collisions"""
+
+    
+    import hashlib
+    m = hashlib.sha256()
+    m.update(read_remote_model(model_name, start=0x100000, size=0x10000).getvalue())
+    return m.hexdigest()[0:8]
+
+
 
 
 def select_checkpoint():
@@ -281,19 +298,47 @@ def read_metadata_from_safetensors(filename):
                     pass
 
         return res
+    
+def read_metadata_from_remote_safetensors(filename):
+    import json
+
+    metadata_len = read_remote_model(filename, start=0, size=8).getvalue()
+    metadata_len = int.from_bytes(metadata_len, "little")
+    json_start = read_remote_model(filename, start=8, size=2).getvalue()
+    print("metadata_len: ", metadata_len)
+    print ("json_start %b, len: %d", json_start, len(json_start))
+
+    assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
+    json_data = json_start + read_remote_model(filename, start=10, size=metadata_len-2).getvalue()
+    json_obj = json.loads(json_data)
+
+    res = {}
+    for k, v in json_obj.get("__metadata__", {}).items():
+        res[k] = v
+        if isinstance(v, str) and v[0:1] == '{':
+            try:
+                res[k] = json.loads(v)
+            except Exception:
+                pass
+
+    return res
 
 
-def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
+def read_state_dict(checkpoint_file, print_global_state=False, map_location=None, remote_model=True):
     _, extension = os.path.splitext(checkpoint_file)
     if extension.lower() == ".safetensors":
         device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
 
-        if not shared.opts.disable_mmap_load_safetensors:
+        if remote_model:
+            buf = load_remote_ckpt(checkpoint_file)
+            pl_sd = safetensors.torch.load(buf.getvalue())
+            pl_sd = {k: v.to(device) for k, v in pl_sd.items()}
+        elif not shared.opts.disable_mmap_load_safetensors:
             pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
         else:
             pl_sd = safetensors.torch.load(open(checkpoint_file, 'rb').read())
             pl_sd = {k: v.to(device) for k, v in pl_sd.items()}
-    elif extension.lower() == ".ckpt" and shared.opts.load_remote_ckpt:
+    elif remote_model:
         buf = load_remote_ckpt(checkpoint_file)
         pl_sd = torch.load(buf, map_location=map_location or shared.weight_load_location)
     else:
@@ -307,11 +352,11 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
 
 
 def load_remote_ckpt(checkpoint_file):
-    oss_obj_buf = RemoteModelBuffer()
-    return oss_obj_buf.read(os.path.basename(checkpoint_file))
+    # oss_obj_buf = RemoteModelBuffer()
+    return read_remote_model(checkpoint_file)
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash()
+    sd_model_hash = checkpoint_info.calculate_shorthash(checkpoint_info.remote_model)
     timer.record("calculate hash")
 
     if checkpoint_info in checkpoints_loaded:
@@ -320,7 +365,7 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
         return checkpoints_loaded[checkpoint_info]
 
     print(f"Loading weights [{sd_model_hash}] from {checkpoint_info.filename}")
-    res = read_state_dict(checkpoint_info.filename)
+    res = read_state_dict(checkpoint_info.filename, remote_model=checkpoint_info.remote_model)
     timer.record("load weights from disk")
 
     return res
@@ -342,7 +387,7 @@ class SkipWritingToConfig:
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash()
+    sd_model_hash = checkpoint_info.calculate_shorthash(remote_model=checkpoint_info.remote_model)
     timer.record("calculate hash")
 
     if not SkipWritingToConfig.skip:
