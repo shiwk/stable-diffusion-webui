@@ -264,7 +264,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires checkpoint and sampler selection").needs_reload_ui(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_reload_ui(),
     "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_reload_ui(),
-    "load_remote_ckpt": OptionInfo(False, "Load ckpt models from remote object storage"),
+    "load_remote_ckpt": OptionInfo(False, "Load ckpt models from remote object storage").needs_reload_ui(),
     'bucket_name': OptionInfo("", "Bucket name to download ckpt model"),
     'bucket_endpoint': OptionInfo("", "Bucket endpoint to download ckpt model"),
     'bucket_model_ckpt_dir': OptionInfo("", "Ckpt model directory in bucket"),

@@ -168,6 +168,7 @@ def configure_opts_onchange():
     from modules.call_queue import wrap_queued_call
 
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: sd_models.reload_model_weights()), call=False)
+    shared.opts.onchange("load_remote_ckpt", wrap_queued_call(lambda: (sd_models.list_models(),sd_models.load_model())), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_overrides_per_model_preferences", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
