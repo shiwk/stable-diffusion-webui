@@ -73,7 +73,7 @@ class CheckpointInfo:
         self.metadata = {}
         if self.is_safetensors:
             try:
-                self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name, filename, read_metadata, remote_model)
+                self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name + ('[remote]' if self.remote_model else '' ), filename, read_metadata, remote_model)
             except Exception as e:
                 errors.display(e, f"reading metadata for {filename}")
 
@@ -82,11 +82,11 @@ class CheckpointInfo:
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.hash = model_hash(filename) if not remote_model else remote_model_hash(filename)
 
-        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}", remote_model=remote_model)
+        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name + ('[remote]' if self.remote_model else '' )}", remote_model=remote_model)
         self.shorthash = self.sha256[0:10] if self.sha256 else None
 
-        self.title = name + '[remote]' if self.remote_model else '' + '' if self.shorthash is None else f'[{self.shorthash}]'
-        self.short_title = self.name_for_extra + '[remote]' if self.remote_model else '' + '' if self.shorthash is None else f'[{self.shorthash}]'
+        self.title = name + ('[remote]' if self.remote_model else '' )+ ('' if self.shorthash is None else f'[{self.shorthash}]')
+        self.short_title = self.name_for_extra + ('[remote]' if self.remote_model else '') + ('' if self.shorthash is None else f'[{self.shorthash}]')
 
         self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
         if self.shorthash:
@@ -97,8 +97,8 @@ class CheckpointInfo:
         for id in self.ids:
             checkpoint_aliases[id] = self
 
-    def calculate_shorthash(self, remote_model=False):
-        self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}", remote_model=remote_model)
+    def calculate_shorthash(self):
+        self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name + ('[remote]' if self.remote_model else '' )}", remote_model=self.remote_model)
         if self.sha256 is None:
             return
 
@@ -112,8 +112,8 @@ class CheckpointInfo:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
 
         old_title = self.title
-        self.title = f'{self.name} {"[remote]" if remote_model else ""}[{self.shorthash}]'
-        self.short_title = f'{self.name_for_extra} {"[remote]" if remote_model else ""}[{self.shorthash}]'
+        self.title = f'{self.name} {"[remote]" if self.remote_model else ""}[{self.shorthash}]'
+        self.short_title = f'{self.name_for_extra} {"[remote]" if self.remote_model else ""}[{self.shorthash}]'
 
         replace_key(checkpoints_list, old_title, self.title, self)
         self.register()
@@ -170,7 +170,6 @@ def list_models():
         for filename in remote_models:
             checkpoint_info = CheckpointInfo(filename, remote_model=True)
             checkpoint_info.register()
-
 re_strip_checksum = re.compile(r"\s*\[[^]]+]\s*$")
 
 
@@ -355,7 +354,7 @@ def load_remote_ckpt(checkpoint_file):
     return read_remote_model(checkpoint_file)
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash(checkpoint_info.remote_model)
+    sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
     if checkpoint_info in checkpoints_loaded:
@@ -386,7 +385,7 @@ class SkipWritingToConfig:
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash(remote_model=checkpoint_info.remote_model)
+    sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
     if not SkipWritingToConfig.skip:
