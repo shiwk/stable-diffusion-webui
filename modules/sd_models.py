@@ -350,7 +350,6 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
 
 
 def load_remote_ckpt(checkpoint_file):
-    # oss_obj_buf = RemoteModelBuffer()
     return read_remote_model(checkpoint_file)
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):

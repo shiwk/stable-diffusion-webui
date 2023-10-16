@@ -53,12 +53,6 @@ then
     export GIT="git"
 fi
 
-# git executable
-if [[ -z "${REPO}" ]]
-then
-    export REPO="https://github.com/AUTOMATIC1111/stable-diffusion-webui.git"
-fi
-
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
 if [[ -z "${venv_dir}" ]] && [[ $use_venv -eq 1 ]]
 then
@@ -194,7 +188,7 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Clone stable-diffusion-webui"
     printf "\n%s\n" "${delimiter}"
-    "${GIT}" clone "${REPO}" "${clone_dir}"
+    "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${clone_dir}"
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 

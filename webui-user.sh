@@ -17,7 +17,6 @@
 
 # git executable
 #export GIT="git"
-#export REPO="https://github.com/AUTOMATIC1111/stable-diffusion-webui.git"
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
 #venv_dir="venv"
