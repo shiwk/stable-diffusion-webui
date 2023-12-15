@@ -1,3 +1,29 @@
+# Feature First
+
+Ckpt model is always kind of big file excceding Gigabytes. This will turn into a simple disk space problem if lots of models maintained . Cloud object storage solved that problem, like Amazon S3 or Aliyun Oss, providing cheap and scalable storage service. 
+
+The feature of this fork is to load remote models in cloud object storage directly. Only few steps before you use it:
+
+- export your `ACCESS_KEY_ID` and  `ACCESS_KEY_SECRET ` in webui-user.sh
+- Launch your webui as usual
+- Enable and specify your bucket info: Settings->User Interfaces
+  - `load_remote_ckpt` enable switch
+  - `bucket_name` your bucket name
+  - `bucket_endpoint` your bucket endpoint
+  - `bucket_model_ckpt_dir` model location in your bucket
+
+- Reload webui
+
+Refresh model list and your remote model is available. 
+![](remote_load_screenshot.png)
+
+What should be mentioned:
+- linux system supported but not windows
+- aliyun oss tesed, it should also work with amazon s3 but not tested yet
+
+
+
+
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
