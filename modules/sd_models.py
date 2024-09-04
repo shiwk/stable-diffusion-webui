@@ -213,7 +213,7 @@ def remote_model_hash(model_name):
     
     import hashlib
     m = hashlib.sha256()
-    m.update(read_remote_model(model_name, start=0x100000, size=0x10000).getvalue())
+    m.update(read_remote_model(model_name, start=0x100000, size=0x10000))
     return m.hexdigest()[0:8]
 
 
@@ -302,12 +302,12 @@ def read_metadata_from_safetensors(filename):
 def read_metadata_from_remote_safetensors(filename):
     import json
 
-    metadata_len = read_remote_model(filename, start=0, size=8).getvalue()
+    metadata_len = read_remote_model(filename, start=0, size=8)
     metadata_len = int.from_bytes(metadata_len, "little")
-    json_start = read_remote_model(filename, start=8, size=2).getvalue()
+    json_start = read_remote_model(filename, start=8, size=2)
 
     assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
-    json_data = json_start + read_remote_model(filename, start=10, size=metadata_len-2).getvalue()
+    json_data = json_start + read_remote_model(filename, start=10, size=metadata_len-2)
     json_obj = json.loads(json_data)
 
     res = {}

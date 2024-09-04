@@ -4,7 +4,7 @@ import os
 import threading
 from io import BytesIO
 from modules import shared
-
+from osstorchconnector import OssCheckpoint
 
 
 def __bucket__():
@@ -35,39 +35,49 @@ def list_remote_models(ext_filter):
     
     return output
 
+# def read_remote_model(checkpoint_file, start=0, size=-1):
+#     time_start = time.time()
+#     buffer = BytesIO()
+#     obj_size = __get_object_size(checkpoint_file)
+
+
+#     s = start
+#     end = (obj_size if size == -1 else start + size) - 1
+
+#     tasks = []
+
+#     read_chunk_size = 2 * 1024 * 1024
+#     part_size = 256 * 1024 * 1024
+    
+#     while True:
+#         if s > end:
+#             break
+
+#         e = min(s + part_size - 1, end)
+#         t = threading.Thread(target=__range_get,
+#                             args=(checkpoint_file, buffer, start, s, e, read_chunk_size))
+#         tasks.append(t)
+#         t.start()
+#         s += part_size
+
+#     for t in tasks:
+#         t.join()
+    
+#     time_end = time.time()
+
+#     print ("remote %s read time cost: %f"%(checkpoint_file, time_end - time_start))
+#     buffer.seek(0)
+#     return buffer
+
+
+
 def read_remote_model(checkpoint_file, start=0, size=-1):
-    time_start = time.time()
-    buffer = BytesIO()
-    obj_size = __get_object_size(checkpoint_file)
-
-
-    s = start
-    end = (obj_size if size == -1 else start + size) - 1
-
-    tasks = []
-
-    read_chunk_size = 2 * 1024 * 1024
-    part_size = 256 * 1024 * 1024
     
-    while True:
-        if s > end:
-            break
-
-        e = min(s + part_size - 1, end)
-        t = threading.Thread(target=__range_get,
-                            args=(checkpoint_file, buffer, start, s, e, read_chunk_size))
-        tasks.append(t)
-        t.start()
-        s += part_size
-
-    for t in tasks:
-        t.join()
-    
-    time_end = time.time()
-
-    print ("remote %s read time cost: %f"%(checkpoint_file, time_end - time_start))
-    buffer.seek(0)
-    return buffer
+    checkpoint = OssCheckpoint(endpoint=endpoint, cred_path=cred_path, config_path=config_path)
+    CHECKPOINT_URI = "oss://%s/%s" % (shared.opts.bucket_name, checkpoint_file)
+    with checkpoint.reader(CHECKPOINT_URI) as reader:
+        reader.seek(start)
+        return reader.read(size)    
 
 def __range_get(object_name, buffer, offset, start, end, read_chunk_size):
     chunk_size = int(read_chunk_size)
