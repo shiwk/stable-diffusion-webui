@@ -152,7 +152,7 @@ def initialize_rest(*, reload_script_modules=False):
         from modules import devices
         devices.first_time_calculation()
 
-    Thread(target=load_model).start()
+    # Thread(target=load_model).start()
 
     from modules import shared_items
     shared_items.reload_hypernetworks()
