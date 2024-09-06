@@ -38,3 +38,5 @@ notification.mp3
 /node_modules
 /package-lock.json
 /.coverage*
+/output.log
+/webui-user.sh
