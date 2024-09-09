@@ -4,8 +4,14 @@ import os
 import threading
 from io import BytesIO
 from modules import shared
+from osstorchconnector import OssCheckpoint
+import torch
 
-
+def __check_bucket_opts():
+    if shared.opts.bucket_name and shared.opts.bucket_endpoint:
+        return True
+    print("Bucket opts not specified.")
+    return False
 
 def __bucket__():
     auth = oss2.Auth(os.environ.get('ACCESS_KEY_ID'), os.environ.get('ACCESS_KEY_SECRET'))
@@ -19,8 +25,10 @@ def get_remote_model_mmtime(model_name):
     return  __bucket__().head_object(model_name).last_modified
 
 def list_remote_models(ext_filter):
-    dir = shared.opts.bucket_model_ckpt_dir if shared.opts.bucket_model_ckpt_dir.endswith('/') else shared.opts.bucket_model_ckpt_dir + '/'
+    if not __check_bucket_opts():
+        return []
     output = []
+    dir = shared.opts.bucket_model_ckpt_dir if shared.opts.bucket_model_ckpt_dir.endswith('/') else shared.opts.bucket_model_ckpt_dir + '/'
     for obj in oss2.ObjectIteratorV2(__bucket__(), prefix = dir, delimiter = '/', start_after=dir, fetch_owner=False):
         if obj.is_prefix():
             print('directory: ', obj.key)
@@ -68,6 +76,21 @@ def read_remote_model(checkpoint_file, start=0, size=-1):
     print ("remote %s read time cost: %f"%(checkpoint_file, time_end - time_start))
     buffer.seek(0)
     return buffer
+
+
+
+def load_remote_model_ckpt(checkpoint_file, map_location) -> bytes:
+    if not __check_bucket_opts():
+        return bytes()
+    
+    checkpoint = OssCheckpoint(endpoint=shared.opts.bucket_endpoint)
+    CHECKPOINT_URI = "oss://%s/%s" % (shared.opts.bucket_name, checkpoint_file)
+    print("load %s state.." % CHECKPOINT_URI)
+    state_dict = None
+    with checkpoint.reader(CHECKPOINT_URI) as reader:
+        state_dict = torch.load(reader, map_location = map_location, weights_only = True)
+        print("type:", type(state_dict))
+    return state_dict
 
 def __range_get(object_name, buffer, offset, start, end, read_chunk_size):
     chunk_size = int(read_chunk_size)
