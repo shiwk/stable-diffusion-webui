@@ -32,7 +32,7 @@ script_callbacks.on_before_ui(before_ui)
 script_callbacks.on_infotext_pasted(networks.infotext_pasted)
 
 
-shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
+shared.options_templates.update(shared.options_section((None, "Extra Networks"), {
     "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, lambda: {"choices": ["None", *networks.available_networks]}, refresh=networks.list_available_networks),
     "lora_preferred_name": shared.OptionInfo("Alias from file", "When adding to prompt, refer to Lora by", gr.Radio, {"choices": ["Alias from file", "Filename"]}),
     "lora_add_hashes_to_infotext": shared.OptionInfo(True, "Add Lora hashes to infotext"),
@@ -42,7 +42,7 @@ shared.options_templates.update(shared.options_section(('extra_networks', "Extra
 }))
 
 
-shared.options_templates.update(shared.options_section(('compatibility', "Compatibility"), {
+shared.options_templates.update(shared.options_section((None, "Compatibility"), {
     "lora_functional": shared.OptionInfo(False, "Lora/Networks: use old method that takes longer when you have multiple Loras active and produces same results as kohya-ss/sd-webui-additional-networks extension"),
 }))
 

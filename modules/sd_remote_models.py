@@ -8,14 +8,14 @@ from osstorchconnector import OssCheckpoint
 import torch
 
 def __check_bucket_opts():
-    if shared.opts.bucket_name and shared.opts.bucket_endpoint:
+    if os.environ.get('BUCKET_NAME') and os.environ.get('BUCKET_ENDPOINT'):
         return True
     print("Bucket opts not specified.")
     return False
 
 def __bucket__():
     auth = oss2.Auth(os.environ.get('ACCESS_KEY_ID'), os.environ.get('ACCESS_KEY_SECRET'))
-    return  oss2.Bucket(auth, shared.opts.bucket_endpoint, shared.opts.bucket_name, enable_crc=False)
+    return  oss2.Bucket(auth, os.environ.get('BUCKET_ENDPOINT'), os.environ.get('BUCKET_NAME'), enable_crc=False)
 
 def __get_object_size(object_name):
     simplifiedmeta = __bucket__().get_object_meta(object_name)
@@ -28,7 +28,7 @@ def list_remote_models(ext_filter):
     if not __check_bucket_opts():
         return []
     output = []
-    dir = shared.opts.bucket_model_ckpt_dir if shared.opts.bucket_model_ckpt_dir.endswith('/') else shared.opts.bucket_model_ckpt_dir + '/'
+    dir = os.environ.get('BUCKET_MODEL_DIR') if os.environ.get('BUCKET_MODEL_DIR').endswith('/') else os.environ.get('BUCKET_MODEL_DIR') + '/'
     for obj in oss2.ObjectIteratorV2(__bucket__(), prefix = dir, delimiter = '/', start_after=dir, fetch_owner=False):
         if obj.is_prefix():
             print('directory: ', obj.key)
@@ -83,8 +83,8 @@ def load_remote_model_ckpt(checkpoint_file, map_location) -> bytes:
     if not __check_bucket_opts():
         return bytes()
     
-    checkpoint = OssCheckpoint(endpoint=shared.opts.bucket_endpoint)
-    CHECKPOINT_URI = "oss://%s/%s" % (shared.opts.bucket_name, checkpoint_file)
+    checkpoint = OssCheckpoint(endpoint=os.environ.get('BUCKET_ENDPOINT'))
+    CHECKPOINT_URI = "oss://%s/%s" % (os.environ.get('BUCKET_NAME'), checkpoint_file)
     print("load %s state.." % CHECKPOINT_URI)
     state_dict = None
     with checkpoint.reader(CHECKPOINT_URI) as reader:

@@ -1279,12 +1279,12 @@ def create_ui():
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
 
-                if ifid not in ["extensions", "settings"]:
-                    loadsave.add_block(interface, ifid)
+            #     if ifid not in ["extensions", "settings"]:
+            #         loadsave.add_block(interface, ifid)
 
-            loadsave.add_component(f"webui/Tabs@{tabs.elem_id}", tabs)
+            # loadsave.add_component(f"webui/Tabs@{tabs.elem_id}", tabs)
 
-            loadsave.setup_ui()
+            # loadsave.setup_ui()
 
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
