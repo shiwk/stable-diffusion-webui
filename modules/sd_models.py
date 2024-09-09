@@ -76,7 +76,7 @@ class CheckpointInfo:
                 self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name + ('[remote]' if self.remote_model else '' ), filename, read_metadata, remote_model)
             except Exception as e:
                 errors.display(e, f"reading metadata for {filename}")
-
+        print("CheckpointInfo start")
         self.name = name
         self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
@@ -84,13 +84,18 @@ class CheckpointInfo:
 
         self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name + ('[remote]' if self.remote_model else '' )}", remote_model=remote_model)
         self.shorthash = self.sha256[0:10] if self.sha256 else None
-
+        print("sha256: %s" % self.sha256)
+        print("shorthash: %s" % self.shorthash)
+        
         self.title = name + ('[remote]' if self.remote_model else '' )+ ('' if self.shorthash is None else f'[{self.shorthash}]')
         self.short_title = self.name_for_extra + ('[remote]' if self.remote_model else '') + ('' if self.shorthash is None else f'[{self.shorthash}]')
+        print("title: %s" % self.title)
+        print("short_title: %s" % self.short_title)
 
         self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
         if self.shorthash:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
+        print("CheckpointInfo end")
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -170,6 +175,8 @@ def list_models():
         for filename in remote_models:
             checkpoint_info = CheckpointInfo(filename, remote_model=True)
             checkpoint_info.register()
+            print ("list_model: %s " % filename)
+
 re_strip_checksum = re.compile(r"\s*\[[^]]+]\s*$")
 
 
@@ -213,7 +220,7 @@ def remote_model_hash(model_name):
     
     import hashlib
     m = hashlib.sha256()
-    m.update(read_remote_model(model_name, start=0x100000, size=0x10000))
+    m.update(read_remote_model(model_name, start=0x100000, size=0x10000).getvalue())
     return m.hexdigest()[0:8]
 
 
@@ -302,12 +309,12 @@ def read_metadata_from_safetensors(filename):
 def read_metadata_from_remote_safetensors(filename):
     import json
 
-    metadata_len = read_remote_model(filename, start=0, size=8)
+    metadata_len = read_remote_model(filename, start=0, size=8).getvalue()
     metadata_len = int.from_bytes(metadata_len, "little")
-    json_start = read_remote_model(filename, start=8, size=2)
+    json_start = read_remote_model(filename, start=8, size=2).getvalue()
 
     assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
-    json_data = json_start + read_remote_model(filename, start=10, size=metadata_len-2)
+    json_data = json_start + read_remote_model(filename, start=10, size=metadata_len-2).getvalue()
     json_obj = json.loads(json_data)
 
     res = {}
