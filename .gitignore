@@ -6,6 +6,7 @@ __pycache__
 /SwinIR/*
 /repositories
 /venv
+/venv310
 /tmp
 /model.ckpt
 /models/**/*
@@ -37,3 +38,5 @@ notification.mp3
 /node_modules
 /package-lock.json
 /.coverage*
+/output.log
+/webui-user.sh

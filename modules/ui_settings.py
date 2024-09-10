@@ -123,7 +123,7 @@ class UiSettings:
             current_row = None
             with gr.Tabs(elem_id="settings"):
                 for i, (k, item) in enumerate(opts.data_labels.items()):
-                    section_must_be_skipped = item.section[0] is None
+                    section_must_be_skipped = item.section[1] != "Licenses"
 
                     if previous_section != item.section and not section_must_be_skipped:
                         elem_id, text = item.section
@@ -154,27 +154,27 @@ class UiSettings:
                     current_row.__exit__()
                     current_tab.__exit__()
 
-                with gr.TabItem("Defaults", id="defaults", elem_id="settings_tab_defaults"):
-                    loadsave.create_ui()
+                # with gr.TabItem("Defaults", id="defaults", elem_id="settings_tab_defaults"):
+                #     loadsave.create_ui()
 
-                with gr.TabItem("Sysinfo", id="sysinfo", elem_id="settings_tab_sysinfo"):
-                    gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo" target="_blank">(or open as text in a new page)</a>', elem_id="sysinfo_download")
+                # with gr.TabItem("Sysinfo", id="sysinfo", elem_id="settings_tab_sysinfo"):
+                #     gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo" target="_blank">(or open as text in a new page)</a>', elem_id="sysinfo_download")
 
-                    with gr.Row():
-                        with gr.Column(scale=1):
-                            sysinfo_check_file = gr.File(label="Check system info for validity", type='binary')
-                        with gr.Column(scale=1):
-                            sysinfo_check_output = gr.HTML("", elem_id="sysinfo_validity")
-                        with gr.Column(scale=100):
-                            pass
+                #     with gr.Row():
+                #         with gr.Column(scale=1):
+                #             sysinfo_check_file = gr.File(label="Check system info for validity", type='binary')
+                #         with gr.Column(scale=1):
+                #             sysinfo_check_output = gr.HTML("", elem_id="sysinfo_validity")
+                #         with gr.Column(scale=100):
+                #             pass
 
-                with gr.TabItem("Actions", id="actions", elem_id="settings_tab_actions"):
-                    request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
-                    download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
-                    reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
-                    with gr.Row():
-                        unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
-                        reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
+                # with gr.TabItem("Actions", id="actions", elem_id="settings_tab_actions"):
+                #     request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+                #     download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
+                #     reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
+                #     with gr.Row():
+                #         unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
+                #         reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
 
                 with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
                     gr.HTML(shared.html("licenses.html"), elem_id="licenses")
@@ -183,48 +183,48 @@ class UiSettings:
 
                 self.text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
 
-            unload_sd_model.click(
-                fn=sd_models.unload_model_weights,
-                inputs=[],
-                outputs=[]
-            )
+            # unload_sd_model.click(
+            #     fn=sd_models.unload_model_weights,
+            #     inputs=[],
+            #     outputs=[]
+            # )
 
-            reload_sd_model.click(
-                fn=sd_models.reload_model_weights,
-                inputs=[],
-                outputs=[]
-            )
+            # reload_sd_model.click(
+            #     fn=sd_models.reload_model_weights,
+            #     inputs=[],
+            #     outputs=[]
+            # )
 
-            request_notifications.click(
-                fn=lambda: None,
-                inputs=[],
-                outputs=[],
-                _js='function(){}'
-            )
+            # request_notifications.click(
+            #     fn=lambda: None,
+            #     inputs=[],
+            #     outputs=[],
+            #     _js='function(){}'
+            # )
 
-            download_localization.click(
-                fn=lambda: None,
-                inputs=[],
-                outputs=[],
-                _js='download_localization'
-            )
+            # download_localization.click(
+            #     fn=lambda: None,
+            #     inputs=[],
+            #     outputs=[],
+            #     _js='download_localization'
+            # )
 
             def reload_scripts():
                 scripts.reload_script_body_only()
                 reload_javascript()  # need to refresh the html page
 
-            reload_script_bodies.click(
-                fn=reload_scripts,
-                inputs=[],
-                outputs=[]
-            )
+            # reload_script_bodies.click(
+            #     fn=reload_scripts,
+            #     inputs=[],
+            #     outputs=[]
+            # )
 
-            restart_gradio.click(
-                fn=shared.state.request_restart,
-                _js='restart_reload',
-                inputs=[],
-                outputs=[],
-            )
+            # restart_gradio.click(
+            #     fn=shared.state.request_restart,
+            #     _js='restart_reload',
+            #     inputs=[],
+            #     outputs=[],
+            # )
 
             def check_file(x):
                 if x is None:
@@ -235,11 +235,11 @@ class UiSettings:
 
                 return 'Invalid'
 
-            sysinfo_check_file.change(
-                fn=check_file,
-                inputs=[sysinfo_check_file],
-                outputs=[sysinfo_check_output],
-            )
+            # sysinfo_check_file.change(
+            #     fn=check_file,
+            #     inputs=[sysinfo_check_file],
+            #     outputs=[sysinfo_check_output],
+            # )
 
         self.interface = settings_interface
 

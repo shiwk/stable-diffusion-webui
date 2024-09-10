@@ -76,7 +76,7 @@ class CheckpointInfo:
                 self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name + ('[remote]' if self.remote_model else '' ), filename, read_metadata, remote_model)
             except Exception as e:
                 errors.display(e, f"reading metadata for {filename}")
-
+        print("CheckpointInfo start")
         self.name = name
         self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
@@ -84,13 +84,18 @@ class CheckpointInfo:
 
         self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name + ('[remote]' if self.remote_model else '' )}", remote_model=remote_model)
         self.shorthash = self.sha256[0:10] if self.sha256 else None
-
+        print("sha256: %s" % self.sha256)
+        print("shorthash: %s" % self.shorthash)
+        
         self.title = name + ('[remote]' if self.remote_model else '' )+ ('' if self.shorthash is None else f'[{self.shorthash}]')
         self.short_title = self.name_for_extra + ('[remote]' if self.remote_model else '') + ('' if self.shorthash is None else f'[{self.shorthash}]')
+        print("title: %s" % self.title)
+        print("short_title: %s" % self.short_title)
 
         self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
         if self.shorthash:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
+        print("CheckpointInfo end")
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -144,32 +149,34 @@ def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
 
-    if not shared.opts.load_remote_ckpt:
-        cmd_ckpt = shared.cmd_opts.ckpt
-        if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
-            model_url = None
-        else:
-            model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+    # if not shared.opts.load_remote_ckpt:
+    #     cmd_ckpt = shared.cmd_opts.ckpt
+    #     if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
+    #         model_url = None
+    #     else:
+    #         model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
 
-        model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    #     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
 
-        if os.path.exists(cmd_ckpt):
-            checkpoint_info = CheckpointInfo(cmd_ckpt)
-            checkpoint_info.register()
+    #     if os.path.exists(cmd_ckpt):
+    #         checkpoint_info = CheckpointInfo(cmd_ckpt)
+    #         checkpoint_info.register()
 
-            shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
-        elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-            print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+    #         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
+    #     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
+    #         print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
 
-        for filename in model_list:
-            checkpoint_info = CheckpointInfo(filename)
-            checkpoint_info.register()
+    #     for filename in model_list:
+    #         checkpoint_info = CheckpointInfo(filename)
+    #         checkpoint_info.register()
     
-    else:
-        remote_models = list_remote_models(ext_filter=[".ckpt", ".safetensors"])
-        for filename in remote_models:
-            checkpoint_info = CheckpointInfo(filename, remote_model=True)
-            checkpoint_info.register()
+    # else:
+    remote_models = list_remote_models(ext_filter=[".ckpt", ".safetensors"])
+    for filename in remote_models:
+        checkpoint_info = CheckpointInfo(filename, remote_model=True)
+        checkpoint_info.register()
+        print ("list_model: %s " % filename)
+
 re_strip_checksum = re.compile(r"\s*\[[^]]+]\s*$")
 
 

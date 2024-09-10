@@ -546,7 +546,9 @@ class Api:
         return {}
 
     def reloadapi(self):
+        print("start reload api")
         reload_model_weights()
+        print("end reload api")
 
         return {}
 
